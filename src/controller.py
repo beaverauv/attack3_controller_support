@@ -3,12 +3,14 @@
 import rospy
 import numpy
 import math
-from evdev import InputDevice, categorize, ecodes
+import evdev
+#from evdev import InputDevice, categorize, ecodes
 from std_msgs.msg import Float64
 
-#creates object 'gamepad' to store the data
-#you can call it whatever you like
-gamepad = InputDevice('/dev/input/event0')
+devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+for device in devices:
+	if device.name == 'Logitech Logitech Attack 3':
+		gamepad = evdev.InputDevice(device.path)
 
 #button code variables (change to suit your device)
 
@@ -40,7 +42,7 @@ rospy.init_node('Joystick_controller', anonymous=True)
 for event in gamepad.read_loop():
     if rospy.is_shutdown():
 	break
-    if event.type == ecodes.EV_KEY:
+    if event.type == evdev.ecodes.EV_KEY:
 	if event.code == 298:
 		button_status("Button 11", event.value)
 	elif event.code == 297:
@@ -67,7 +69,7 @@ for event in gamepad.read_loop():
                 button_status("Trigger", event.value)
 	else:
 		print("UNREGONIZED BUTTON") 
-    if event.type == ecodes.EV_ABS:
+    if event.type == evdev.ecodes.EV_ABS:
 	if event.code == 0:
 		xaxis = event.value
 	elif event.code == 1:
