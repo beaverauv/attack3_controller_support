@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-#import evdev
 import rospy
+import numpy
+import math
 from evdev import InputDevice, categorize, ecodes
 
 #creates object 'gamepad' to store the data
@@ -11,6 +12,9 @@ gamepad = InputDevice('/dev/input/event2')
 #button code variables (change to suit your device)
 
 print(gamepad)
+
+xaxis = 128
+yaxis = 128
 
 def button_status(name, value):
 	if value == 1:
@@ -49,14 +53,33 @@ for event in gamepad.read_loop():
 		print("UNREGONIZED BUTTON") 
     if event.type == ecodes.EV_ABS:
 	if event.code == 0:
-		print("X Axis: " + str(event.value))
+		xaxis = event.value
 	elif event.code == 1:
-		print("Y Axis: " + str(event.value))
+		yaxis = event.value
 	elif event.code == 2:
 		print("Z Axis: " + str(event.value))
 	else:
 		print("UNRECOGNIZED MOVEMENT")
 
+    xfrac = 0.0
+    if xaxis > 135:
+	xfrac = (float(xaxis)-135)/120
+    elif xaxis < 121:
+	xfrac = -1.0+(float(xaxis)/(121))
 
+    yfrac = 0.0
+    if yaxis > 135:
+        yfrac = ((float(yaxis)-135)/(-120))
+    elif yaxis < 121:
+        yfrac = 1.0-(float(yaxis)/(121))
 
-
+    print(xfrac, yfrac)
+    angle = math.degrees(numpy.arctan2(yfrac,xfrac))
+    angle = angle - 90
+    if angle < 0:
+	angle = angle + 360
+    mag = math.sqrt((yfrac**2) + (xfrac**2))
+    if mag > 1.0:
+	mag = 1.0
+    print("angle: " + str(angle))
+    print("mag: " + str(mag))
