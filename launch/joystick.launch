@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="motor_control" type="motor_mixer.py" name="motormixer">
+  </node>
+  <node pkg="attack3_controller_support" type="controller.py" name="controllerthing">
+  </node>
+
+</launch>

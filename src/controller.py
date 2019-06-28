@@ -4,10 +4,11 @@ import rospy
 import numpy
 import math
 from evdev import InputDevice, categorize, ecodes
+from std_msgs.msg import Float64
 
 #creates object 'gamepad' to store the data
 #you can call it whatever you like
-gamepad = InputDevice('/dev/input/event2')
+gamepad = InputDevice('/dev/input/event0')
 
 #button code variables (change to suit your device)
 
@@ -15,6 +16,8 @@ print(gamepad)
 
 xaxis = 128
 yaxis = 128
+zaxis = 0
+raxis = 0
 
 def button_status(name, value):
 	if value == 1:
@@ -24,8 +27,19 @@ def button_status(name, value):
 	else:
 		print(name + " Unknown Value")
 
+trans_vec_pub = rospy.Publisher('translational_vector', Float64, queue_size=1)
+trans_mag_pub = rospy.Publisher('translational_magnitude', Float64, queue_size=1)
+rot_vec_pub = rospy.Publisher('rotational_vector', Float64, queue_size=1)
+rot_mag_pub = rospy.Publisher('rotational_magnitude', Float64, queue_size=1)
+depth_effort_pub = rospy.Publisher('depth_effort', Float64, queue_size=10)
+
+rospy.init_node('Joystick_controller', anonymous=True)
+
+
 #loop and filter by event code and print the mapped label
 for event in gamepad.read_loop():
+    if rospy.is_shutdown():
+	break
     if event.type == ecodes.EV_KEY:
 	if event.code == 298:
 		button_status("Button 11", event.value)
@@ -33,8 +47,10 @@ for event in gamepad.read_loop():
 		button_status("Button 10", event.value)
 	elif event.code == 296:
                 button_status("Button 9", event.value)
+		raxis = raxis + 1
 	elif event.code == 295:
                 button_status("Button 8", event.value)
+		raxis = raxis - 1
 	elif event.code == 294:
                 button_status("Button 7", event.value)
 	elif event.code == 293:
@@ -57,7 +73,7 @@ for event in gamepad.read_loop():
 	elif event.code == 1:
 		yaxis = event.value
 	elif event.code == 2:
-		print("Z Axis: " + str(event.value))
+		zaxis = event.value
 	else:
 		print("UNRECOGNIZED MOVEMENT")
 
@@ -73,7 +89,6 @@ for event in gamepad.read_loop():
     elif yaxis < 121:
         yfrac = 1.0-(float(yaxis)/(121))
 
-    print(xfrac, yfrac)
     angle = math.degrees(numpy.arctan2(yfrac,xfrac))
     angle = angle - 90
     if angle < 0:
@@ -81,5 +96,11 @@ for event in gamepad.read_loop():
     mag = math.sqrt((yfrac**2) + (xfrac**2))
     if mag > 1.0:
 	mag = 1.0
-    print("angle: " + str(angle))
-    print("mag: " + str(mag))
+
+    zaxisfloat = float(zaxis)/256
+
+    trans_vec_pub.publish(float(angle))
+    trans_mag_pub.publish(float(mag))
+    rot_vec_pub.publish(numpy.sign(raxis))
+    rot_mag_pub.publish(numpy.abs(raxis))
+    depth_effort_pub.publish(zaxisfloat)
