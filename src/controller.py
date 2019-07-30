@@ -20,6 +20,7 @@ xaxis = 128
 yaxis = 128
 zaxis = 0
 raxis = 0
+depth = 0.0
 
 def button_status(name, value):
 	if value == 1:
@@ -34,7 +35,7 @@ trans_mag_pub = rospy.Publisher('translational_magnitude', Float64, queue_size=1
 rot_vec_pub = rospy.Publisher('rotational_vector', Float64, queue_size=1)
 rot_mag_pub = rospy.Publisher('rotational_magnitude', Float64, queue_size=1)
 depth_effort_pub = rospy.Publisher('depth_effort', Float64, queue_size=10)
-
+depth_setpoint_pub = rospy.Publisher('depth_setpoint', Float64, queue_size=10)
 rospy.init_node('Joystick_controller', anonymous=True)
 
 
@@ -48,11 +49,9 @@ for event in gamepad.read_loop():
 	elif event.code == 297:
 		button_status("Button 10", event.value)
 	elif event.code == 296:
-                button_status("Button 9", event.value)
-		raxis = raxis + 1
+		raxis = raxis + 2
 	elif event.code == 295:
-                button_status("Button 8", event.value)
-		raxis = raxis - 1
+		raxis = raxis - 2
 	elif event.code == 294:
                 button_status("Button 7", event.value)
 	elif event.code == 293:
@@ -62,9 +61,9 @@ for event in gamepad.read_loop():
 	elif event.code == 291:
                 button_status("Button 4", event.value)
 	elif event.code == 290:
-                button_status("Button 3", event.value)
+		depth = depth - .1
 	elif event.code == 289:
-                button_status("Button 2", event.value) 
+		depth = depth + .1
 	elif event.code == 288:
                 button_status("Trigger", event.value)
 	else:
@@ -105,4 +104,5 @@ for event in gamepad.read_loop():
     trans_mag_pub.publish(float(mag))
     rot_vec_pub.publish(numpy.sign(raxis))
     rot_mag_pub.publish(numpy.abs(raxis))
-    depth_effort_pub.publish(zaxisfloat)
+    #depth_effort_pub.publish(zaxisfloat)
+    depth_setpoint_pub.publish(depth)
